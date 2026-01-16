@@ -1,3 +1,4 @@
+
 # vSphere Connection
 vsphere_server               = "vcenter.example.com"
 vsphere_user                 = "administrator@vsphere.local"
