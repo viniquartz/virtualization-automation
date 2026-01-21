@@ -13,19 +13,24 @@ backend-config.tfbackend
 # NOTA: Os arquivos em environments/*/terraform.tfvars SÃO commitados como exemplos
 *.auto.tfvars
 terraform.tfvars.local
+*.tfvars.local
 override.tf
 override.tf.json
+crash.log
 
 # Credentials
 *.key
 *.pem
 *.crt
+*-credentials.json
+sp-*-credentials.json
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store

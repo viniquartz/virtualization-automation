@@ -1,0 +1,28 @@
+# Credentials
+*-credentials.json
+sp-*-credentials.json
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfbackend
+terraform.tfvars
+*.auto.tfvars
+crash.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
