@@ -1,8 +1,8 @@
-# POC Scripts - VMware Automation
+# Scripts - VMware Automation
 
-Scripts para testes manuais e demonstração local do workflow Terraform para VMware vSphere.
+Scripts para automação e testes locais do workflow Terraform para VMware vSphere usando Service Principal.
 
-**Nota: Apenas para POC/testes locais. Pipelines CI/CD executam Terraform diretamente.**
+**Nota: Scripts usam Service Principal (mesmo modelo do Jenkins) para garantir consistência entre ambiente local e CI/CD.**
 
 ## Pré-requisitos
 
@@ -42,7 +42,7 @@ export TF_VAR_vsphere_password="your-password"
 ### 2. Autenticar no Azure
 
 ```bash
-bash scripts/poc/azure-login.sh
+bash scripts/azure-login.sh
 ```
 
 Valida credenciais e autentica Azure CLI (para acesso ao backend).
@@ -50,7 +50,7 @@ Valida credenciais e autentica Azure CLI (para acesso ao backend).
 ### 3. Configurar Projeto
 
 ```bash
-bash scripts/poc/configure.sh OPS-1234 tst https://github.com/yourorg/virtualization-automation.git
+bash scripts/configure.sh OPS-1234 tst https://github.com/yourorg/virtualization-automation.git
 ```
 
 **Parâmetros:**
@@ -73,7 +73,7 @@ bash scripts/poc/configure.sh OPS-1234 tst https://github.com/yourorg/virtualiza
 ### 4. (Opcional) Validar Módulos
 
 ```bash
-bash scripts/poc/validate-modules.sh https://github.com/yourorg/virtualization-automation.git main
+bash scripts/validate-modules.sh https://github.com/yourorg/virtualization-automation.git main
 ```
 
 Valida todos os módulos Terraform do repositório.
@@ -81,7 +81,7 @@ Valida todos os módulos Terraform do repositório.
 ### 5. Deploy
 
 ```bash
-bash scripts/poc/deploy.sh OPS-1234 tst
+bash scripts/deploy.sh OPS-1234 tst
 ```
 
 **O que faz:**
@@ -96,7 +96,7 @@ bash scripts/poc/deploy.sh OPS-1234 tst
 ### 6. Destroy
 
 ```bash
-bash scripts/poc/destroy.sh OPS-1234 tst
+bash scripts/destroy.sh OPS-1234 tst
 ```
 
 **O que faz:**
@@ -123,16 +123,16 @@ export TF_VAR_vsphere_user="svc-terraform-tst@vsphere.local"
 export TF_VAR_vsphere_password="password"
 
 # 2. Autenticar no Azure
-bash scripts/poc/azure-login.sh
+bash scripts/azure-login.sh
 
 # 3. Configurar projeto
-bash scripts/poc/configure.sh OPS-1234 tst https://github.com/yourorg/virtualization-automation.git
+bash scripts/configure.sh OPS-1234 tst https://github.com/yourorg/virtualization-automation.git
 
 # 4. (Opcional) Validar módulos
-bash scripts/poc/validate-modules.sh https://github.com/yourorg/virtualization-automation.git main
+bash scripts/validate-modules.sh https://github.com/yourorg/virtualization-automation.git main
 
 # 5. Deploy
-bash scripts/poc/deploy.sh OPS-1234 tst
+bash scripts/deploy.sh OPS-1234 tst
 # Responder: yes
 
 # 6. Verificar
@@ -142,7 +142,7 @@ terraform state list
 
 # 7. Destroy
 cd ..
-bash scripts/poc/destroy.sh OPS-1234 tst
+bash scripts/destroy.sh OPS-1234 tst
 # Responder: yes
 ```
 
@@ -151,7 +151,7 @@ bash scripts/poc/destroy.sh OPS-1234 tst
 ### azure-login.sh
 
 ```bash
-bash scripts/poc/azure-login.sh
+bash scripts/azure-login.sh
 ```
 
 **Requer:**
@@ -170,13 +170,13 @@ bash scripts/poc/azure-login.sh
 ### configure.sh
 
 ```bash
-bash scripts/poc/configure.sh <ticket-id> <environment> <git-repo-url>
+bash scripts/configure.sh <ticket-id> <environment> <git-repo-url>
 ```
 
 **Exemplo:**
 
 ```bash
-bash scripts/poc/configure.sh OPS-1234 tst https://github.com/yourorg/virtualization-automation.git
+bash scripts/configure.sh OPS-1234 tst https://github.com/yourorg/virtualization-automation.git
 ```
 
 **Ações:**
@@ -194,14 +194,14 @@ bash scripts/poc/configure.sh OPS-1234 tst https://github.com/yourorg/virtualiza
 ### validate-modules.sh
 
 ```bash
-bash scripts/poc/validate-modules.sh <git-repo-url> [tag-or-branch]
+bash scripts/validate-modules.sh <git-repo-url> [tag-or-branch]
 ```
 
 **Exemplos:**
 
 ```bash
-bash scripts/poc/validate-modules.sh https://github.com/yourorg/virtualization-automation.git main
-bash scripts/poc/validate-modules.sh https://github.com/yourorg/virtualization-automation.git v1.0.0
+bash scripts/validate-modules.sh https://github.com/yourorg/virtualization-automation.git main
+bash scripts/validate-modules.sh https://github.com/yourorg/virtualization-automation.git v1.0.0
 ```
 
 **Ações:**
@@ -217,13 +217,13 @@ bash scripts/poc/validate-modules.sh https://github.com/yourorg/virtualization-a
 ### deploy.sh
 
 ```bash
-bash scripts/poc/deploy.sh <ticket-id> <environment>
+bash scripts/deploy.sh <ticket-id> <environment>
 ```
 
 **Exemplo:**
 
 ```bash
-bash scripts/poc/deploy.sh OPS-1234 tst
+bash scripts/deploy.sh OPS-1234 tst
 ```
 
 **Ações:**
@@ -240,13 +240,13 @@ bash scripts/poc/deploy.sh OPS-1234 tst
 ### destroy.sh
 
 ```bash
-bash scripts/poc/destroy.sh <ticket-id> <environment>
+bash scripts/destroy.sh <ticket-id> <environment>
 ```
 
 **Exemplo:**
 
 ```bash
-bash scripts/poc/destroy.sh OPS-1234 tst
+bash scripts/destroy.sh OPS-1234 tst
 ```
 
 **Ações:**
@@ -278,7 +278,7 @@ Scripts criam e usam:
 - `.terraform.lock.hcl`
 - `tfplan-*.out`
 
-## Diferenças entre Scripts POC e Pipelines Jenkins
+## Diferenças entre Scripts Locais e Pipelines Jenkins
 
 | Aspecto | Scripts POC | Pipelines Jenkins |
 |---------|-------------|-------------------|
@@ -298,8 +298,9 @@ Scripts criam e usam:
 **Sintoma:** `Not authenticated to Azure`
 
 **Solução:**
+
 ```bash
-bash scripts/poc/azure-login.sh
+bash scripts/azure-login.sh
 ```
 
 ### Erro: Backend not found
@@ -350,7 +351,7 @@ ls -la terraform-modules/
 
 ## Segurança
 
-### Para POC/Testes
+### Para Testes Locais
 - Use service principal dedicado para testes
 - Limite escopo à subscription de teste
 - Use credenciais de curta duração
@@ -362,14 +363,14 @@ ls -la terraform-modules/
 - ✅ Use variáveis de ambiente
 - ✅ Use Azure Key Vault (futuro)
 
-## Próximos Passos
+## Uso em Produção
 
-Após validação do POC:
-1. Migrar workflow para pipelines Jenkins (já criadas)
+Para deployments de produção:
+1. Use pipelines Jenkins (já configuradas)
 2. Configurar credentials no Jenkins
 3. Configurar approval gates
 4. Habilitar notificações (Teams/Slack)
-5. Arquivar scripts POC para referência
+5. Scripts locais mantidos para testes e troubleshooting
 
 ## Observações
 
