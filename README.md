@@ -13,6 +13,7 @@ Automação de infraestrutura VMware vSphere usando Terraform com backend Azure 
 - ✅ **Outputs Detalhados** (IPs, estado, recursos)
 - ✅ **Scripts de Automação** para configuração de backend
 - ✅ **Ambientes Segregados** (tst/qlt/prd) com tfvars dedicados
+- ✅ **Jenkins Pipelines** para CI/CD (validation, deploy, destroy)
 
 ## 📁 Estrutura do Projeto
 
@@ -58,10 +59,12 @@ virtualization-automation/
 │   ├── configure-backend.sh  # Configuração automática de backend
 │   └── azure-login.sh        # Login Azure interativo
 │
-├── scripts-cicd/              # Scripts para pipelines CI/CD
-│   ├── azure-login.sh        # Login com Service Principal
-│   ├── configure.sh          # Setup completo para pipelines
-│   └── validate-modules.sh   # Validação de módulos Terraform
+├── pipelines/                 # Jenkins CI/CD pipelines
+│   ├── terraform-modules-validation-job.groovy
+│   ├── terraform-validation-job.groovy
+│   ├── terraform-deploy-job.groovy
+│   ├── terraform-destroy-job.groovy
+│   └── README.md            # Documentação das pipelines
 │
 ├── ansible/                   # Playbooks Ansible
 │   ├── ansible.cfg
