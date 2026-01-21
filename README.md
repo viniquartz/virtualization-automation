@@ -54,9 +54,14 @@ virtualization-automation/
 │   ├── outputs.tf            # Outputs
 │   └── README.md
 │
-├── scripts/
+├── scripts/                   # Scripts para uso local/interativo
 │   ├── configure-backend.sh  # Configuração automática de backend
-│   └── azure-login.sh        # Helper de login Azure
+│   └── azure-login.sh        # Login Azure interativo
+│
+├── scripts-cicd/              # Scripts para pipelines CI/CD
+│   ├── azure-login.sh        # Login com Service Principal
+│   ├── configure.sh          # Setup completo para pipelines
+│   └── validate-modules.sh   # Validação de módulos Terraform
 │
 ├── ansible/                   # Playbooks Ansible
 │   ├── ansible.cfg
