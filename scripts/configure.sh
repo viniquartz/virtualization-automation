@@ -200,9 +200,10 @@ fi
 log_info "Copying template files..."
 cp terraform-project-template/*.tf ./ 2>/dev/null || true
 cp -r terraform-project-template/environments ./ 2>/dev/null || true
+cp -r terraform-project-template/terraform-modules ./ 2>/dev/null || true
 
 # Verify required files
-REQUIRED_FILES=("main.tf" "variables.tf" "providers.tf" "backend.tf")
+REQUIRED_FILES=("main.tf" "variables.tf" "provider.tf" "backend.tf")
 for file in "${REQUIRED_FILES[@]}"; do
     if [ ! -f "$file" ]; then
         log_error "Required file not found: $file"

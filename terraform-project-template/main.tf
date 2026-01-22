@@ -3,7 +3,9 @@
 # ==============================================================================
 
 module "linux_naming" {
-  source = "../terraform-modules/naming"
+  count = var.create_linux_vm ? 1 : 0
+
+  source = "./terraform-modules/naming"
 
   purpose         = var.linux_vm_purpose
   environment     = var.environment
@@ -11,7 +13,9 @@ module "linux_naming" {
 }
 
 module "windows_naming" {
-  source = "../terraform-modules/naming"
+  count = var.create_windows_vm ? 1 : 0
+
+  source = "./terraform-modules/naming"
 
   purpose         = var.windows_vm_purpose
   environment     = var.environment
@@ -23,11 +27,13 @@ module "windows_naming" {
 # ==============================================================================
 
 module "linux_vm" {
-  source = "../terraform-modules/linux"
+  count = var.create_linux_vm ? 1 : 0
+
+  source = "./terraform-modules/linux"
 
   # Naming from naming module
-  vm_name     = module.linux_naming.vm_name
-  vm_hostname = module.linux_naming.hostname
+  vm_name     = module.linux_naming[0].vm_name
+  vm_hostname = module.linux_naming[0].hostname
 
   # Resources
   cpu_count    = var.linux_cpu_count
@@ -65,11 +71,13 @@ module "linux_vm" {
 # ==============================================================================
 
 module "windows_vm" {
-  source = "../terraform-modules/windows"
+  count = var.create_windows_vm ? 1 : 0
+
+  source = "./terraform-modules/windows"
 
   # Naming from naming module
-  vm_name     = module.windows_naming.vm_name
-  vm_hostname = module.windows_naming.hostname
+  vm_name     = module.windows_naming[0].vm_name
+  vm_hostname = module.windows_naming[0].hostname
 
   # Resources
   cpu_count    = var.windows_cpu_count

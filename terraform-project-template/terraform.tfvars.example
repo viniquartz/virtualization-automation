@@ -1,0 +1,98 @@
+# ==============================================================================
+# PROJECT CONFIGURATION
+# ==============================================================================
+
+environment  = "tst"           # Environment: tst, qlt, or prd
+project_name = "vmware-demo"   # Project name (lowercase, numbers, hyphens)
+ticket_id    = "OPS-1234"      # JIRA ticket ID (e.g., OPS-1234, INFRA-567)
+
+# ==============================================================================
+# VSPHERE CONNECTION
+# Note: Credentials are passed via environment variables or command line:
+#   TF_VAR_vsphere_server
+#   TF_VAR_vsphere_user
+#   TF_VAR_vsphere_password
+# ==============================================================================
+
+vsphere_server               = "vcenter.example.com"
+vsphere_user                 = "svc-terraform@vsphere.local"
+vsphere_password             = "CHANGE-ME"  # Use env var: TF_VAR_vsphere_password
+vsphere_allow_unverified_ssl = true
+
+# ==============================================================================
+# VSPHERE INFRASTRUCTURE
+# ==============================================================================
+
+vsphere_datacenter   = "DC-Prod"
+vsphere_cluster      = "Cluster-Prod"
+vsphere_datastore    = "datastore-prod-01"
+vsphere_network      = "VLAN-100"
+vsphere_resource_pool = null  # Optional: resource pool name
+
+# ==============================================================================
+# NETWORK CONFIGURATION
+# ==============================================================================
+
+network_domain       = "example.com"
+network_ipv4_gateway = "10.0.100.1"
+network_ipv4_netmask = 24
+network_dns_servers  = ["10.0.1.10", "10.0.1.11"]
+
+# ==============================================================================
+# LINUX VM CONFIGURATION
+# ==============================================================================
+
+create_linux_vm          = true
+linux_vm_purpose         = "web"          # Purpose for naming (web, app, db)
+linux_instance_number    = 1              # Instance number (1-99)
+linux_cpu_count          = 2              # vCPU count
+linux_memory_mb          = 4096           # Memory in MB
+linux_disk_size_gb       = 50             # Primary disk size in GB
+linux_template           = "rhel9-template"
+linux_ipv4_address       = "10.0.100.10"
+linux_vm_folder          = null           # Optional: VM folder path
+linux_annotation         = ""             # Optional: VM annotation
+
+# Optional: Additional disks
+linux_additional_disks = [
+  # {
+  #   label       = "disk1"
+  #   size_gb     = 100
+  #   unit_number = 1
+  # }
+]
+
+# ==============================================================================
+# WINDOWS VM CONFIGURATION
+# ==============================================================================
+
+create_windows_vm         = true
+windows_vm_purpose        = "app"         # Purpose for naming (web, app, db)
+windows_instance_number   = 1             # Instance number (1-99)
+windows_cpu_count         = 4             # vCPU count
+windows_memory_mb         = 8192          # Memory in MB
+windows_disk_size_gb      = 100           # Primary disk size in GB
+windows_template          = "win2022-template"
+windows_ipv4_address      = "10.0.100.20"
+windows_workgroup         = "WORKGROUP"
+windows_admin_password    = "CHANGE-ME"   # Use env var: TF_VAR_windows_admin_password
+windows_timezone          = 65            # Timezone ID (65 = UTC)
+windows_auto_logon        = false
+windows_vm_folder         = null          # Optional: VM folder path
+windows_annotation        = ""            # Optional: VM annotation
+
+# Optional: Additional disks
+windows_additional_disks = [
+  # {
+  #   label       = "disk1"
+  #   size_gb     = 200
+  #   unit_number = 1
+  # }
+]
+
+# ==============================================================================
+# TIMEOUTS AND ADVANCED OPTIONS
+# ==============================================================================
+
+wait_for_guest_net_timeout = 5  # Minutes to wait for guest network
+shutdown_wait_timeout      = 3  # Minutes to wait for VM shutdown

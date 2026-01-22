@@ -37,8 +37,9 @@ network_dns_servers  = ["10.10.1.10", "10.10.1.11"]
 # LINUX VM CONFIGURATION
 # ==============================================================================
 
-linux_vm_purpose     = "web"
-linux_instance_number = 1
+create_linux_vm          = true
+linux_vm_purpose         = "web"
+linux_instance_number    = 1
 linux_cpu_count      = 2
 linux_memory_mb      = 4096
 linux_disk_size_gb   = 50
@@ -49,8 +50,9 @@ linux_ipv4_address   = "10.10.100.10"
 # WINDOWS VM CONFIGURATION
 # ==============================================================================
 
-windows_vm_purpose      = "app"
-windows_instance_number = 1
+create_windows_vm         = true
+windows_vm_purpose        = "app"
+windows_instance_number   = 1
 windows_cpu_count       = 4
 windows_memory_mb       = 8192
 windows_disk_size_gb    = 100

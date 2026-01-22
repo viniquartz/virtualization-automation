@@ -117,6 +117,12 @@ variable "network_dns_servers" {
 # LINUX VM CONFIGURATION
 # ==============================================================================
 
+variable "create_linux_vm" {
+  description = "Create Linux VM"
+  type        = bool
+  default     = true
+}
+
 variable "linux_vm_purpose" {
   description = "Linux VM purpose for naming (e.g., web, app, db)"
   type        = string
@@ -182,6 +188,12 @@ variable "linux_additional_disks" {
 # ==============================================================================
 # WINDOWS VM CONFIGURATION
 # ==============================================================================
+
+variable "create_windows_vm" {
+  description = "Create Windows VM"
+  type        = bool
+  default     = true
+}
 
 variable "windows_vm_purpose" {
   description = "Windows VM purpose for naming (e.g., web, app, db)"
