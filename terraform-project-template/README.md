@@ -1,108 +1,121 @@
 # Terraform Project Template
 
-Ready-to-use Terraform project template for VMware VM automation.
+Template base para projetos Terraform de automação VMware.
 
-## Features
-
-- Pre-configured Azure Storage backend
-- vSphere provider setup
-- Linux and Windows VM module examples
-- Complete variable definitions
-
-## Quick Start
-
-### 1. Copy Template
-
-```bash
-cp -r terraform-project-template my-project
-cd my-project
-```
-
-### 2. Configure Backend
-
-Edit `backend.tf` with your Azure Storage Account details or create a backend config file:
-
-```hcl
-# backend-prod.tfbackend
-resource_group_name  = "azr-prd-iac01-weu-rg"
-storage_account_name = "azrprdiac01weust01"
-container_name       = "terraform-state-prd"
-key                  = "vmware/PROJECT-123.tfstate"
-use_azuread_auth     = true
-```
-
-### 3. Configure Environment Variables
-
-```bash
-# Choose your environment: tst, qlt, or prd
-cd environments/tst
-vi terraform.tfvars
-```
-
-Update with your environment details:
-
-- vSphere connection credentials
-- Infrastructure (datacenter, cluster, datastore, network)
-- VM specifications
-- Network configuration
-
-### 4. Initialize and Deploy
-
-```bash
-# From project root
-terraform init -backend-config="backend-tst.tfbackend"
-
-# Plan with environment-specific vars
-terraform plan -var-file="environments/tst/terraform.tfvars"
-
-# Apply
-terraform apply -var-file="environments/tst/terraform.tfvars"
-```
-
-### 5. Destroy
-
-```bash
-terraform destroy -var-file="environments/tst/terraform.tfvars"
-```
-
-## Customization
-
-### Use Only Linux Module
-
-Comment out or remove the `windows_vm` module block in `main.tf`.
-
-### Use Only Windows Module
-
-Comment out or remove the `linux_vm` module block in `main.tf`.
-
-### Add More VMs
-
-Duplicate module blocks with different names and variables:
-
-```hcl
-module "linux_vm_02" {
-  source = "../terraform-modules/linux"
-  
-  vm_name      = "linux-vm-02"
-  vm_hostname  = "linux-vm-02"
-  # ... other variables
-}
-```
-
-### Environment-Specific Configuration
-
-Each environment has its own configuration folder:
-
-- `environments/tst/` - Test environment
-- `environments/qlt/` - Quality environment
-- `environments/prd/` - Production environment
-
-See [environments/README.md](environments/README.md) for details.
-
-## Structure
+## Estrutura
 
 ```
 terraform-project-template/
+├── environments/           # Configurações por ambiente (commitadas)
+│   ├── tst/
+│   │   └── terraform.tfvars
+│   ├── qlt/
+│   │   └── terraform.tfvars
+│   └── prd/
+│       └── terraform.tfvars
+├── main.tf                # Módulos e recursos
+├── variables.tf           # Variáveis do projeto
+├── outputs.tf            # Outputs do projeto
+├── provider.tf           # Configuração vSphere provider
+├── locals.tf             # Variáveis locais e tags
+└── .gitignore            # backend.tf não é commitado (gerado dinamicamente)
+```
+
+## Features
+
+- Backend Azure Storage (gerado dinamicamente)
+- Provider vSphere configurado
+- Módulos Linux e Windows VM
+- Naming convention automático
+- VMs opcionais com count (create_linux_vm, create_windows_vm)
+- Configurações por ambiente commitadas
+
+## Como Usar
+
+### 1. Via Scripts (Local)
+
+```bash
+# Autenticar com Service Principal
+export ARM_CLIENT_ID="xxx"
+export ARM_CLIENT_SECRET="xxx"
+export ARM_SUBSCRIPTION_ID="xxx"
+export ARM_TENANT_ID="xxx"
+bash scripts/azure-login.sh
+
+# Configurar projeto (clona, cria backend, init)
+bash scripts/configure.sh OPS-1234 tst https://github.com/yourorg/repo.git
+
+# Deploy
+bash scripts/deploy.sh OPS-1234 tst
+```
+
+### 2. Via Jenkins (CI/CD)
+
+Pipelines disponíveis:
+- `terraform-deploy-job` - Deploy de infraestrutura
+- `terraform-destroy-job` - Destruição de infraestrutura
+
+As pipelines geram automaticamente:
+- `backend.tf` - Configuração do backend
+- `backend-config.tfbackend` - Parâmetros do backend
+
+## Backend Dinâmico
+
+O backend **não é commitado**. É gerado dinamicamente por:
+
+**Scripts locais:**
+```bash
+cat > backend.tf << 'EOF'
+terraform {
+  backend "azurerm" {}
+}
+EOF
+
+cat > backend-config.tfbackend << EOF
+resource_group_name  = "azr-prd-iac01-weu-rg"
+storage_account_name = "azrprdiac01weust01"
+container_name       = "terraform-state-tst"
+key                  = "vmware/OPS-1234.tfstate"
+EOF
+```
+
+**Pipelines Jenkins:**
+- Backend criado automaticamente na stage "Terraform Init"
+- State key: `vmware/<TICKET_ID>.tfstate`
+- Container por ambiente: `terraform-state-{tst|qlt|prd}`
+
+## Variáveis de Ambiente
+
+### Configuração vSphere (obrigatória)
+
+```bash
+export TF_VAR_vsphere_server="vcenter.example.com"
+export TF_VAR_vsphere_user="svc-terraform@vsphere.local"
+export TF_VAR_vsphere_password="password"
+```
+
+### Criação Opcional de VMs
+
+No `terraform.tfvars` de cada ambiente:
+
+```hcl
+create_linux_vm   = true   # false para não criar
+create_windows_vm = false  # false para não criar
+```
+
+## Customização
+
+### Adicionar Mais VMs
+
+Duplicar módulos em `main.tf`:
+
+```hcl
+module "linux_vm_02" {
+  count  = var.create_linux_vm_02 ? 1 : 0
+  source = "./terraform-modules/linux"
+  # ... configurações
+}
+```
 ├── backend.tf                  # Backend configuration
 ├── providers.tf                # vSphere provider
 ├── locals.tf                   # Local variables and tags

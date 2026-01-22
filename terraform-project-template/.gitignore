@@ -6,13 +6,13 @@
 tfplan-*.json
 .terraform.lock.hcl
 
-# Backend Config (criado dinamicamente pelos scripts POC ou pipelines)
+# Backend Config (criado dinamicamente pelos scripts ou pipelines)
 backend-config.tfbackend
+*-backend.tfbackend
 
 # Variables locais - Overrides (não commitar)
-# NOTA: Os arquivos em environments/*/terraform.tfvars SÃO commitados como exemplos
+# NOTA: terraform.tfvars em environments/* SÃO commitados
 *.auto.tfvars
-terraform.tfvars.local
 *.tfvars.local
 override.tf
 override.tf.json

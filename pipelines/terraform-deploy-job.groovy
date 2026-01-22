@@ -122,6 +122,13 @@ pipeline {
                         
                         az account set --subscription \$ARM_SUBSCRIPTION_ID
                         
+                        # Generate backend.tf
+                        cat > backend.tf << 'BACKEND'
+terraform {
+  backend "azurerm" {}
+}
+BACKEND
+                        
                         # Generate dynamic backend configuration
                         cat > backend-config.tfbackend << EOF
 resource_group_name  = "azr-prd-iac01-weu-rg"
