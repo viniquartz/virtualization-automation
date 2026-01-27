@@ -52,7 +52,6 @@ locals {
   all_tags = merge(
     var.tags,
     {
-      Terraform = "true"
       Module    = "windows"
       OS        = "Windows Server"
     }

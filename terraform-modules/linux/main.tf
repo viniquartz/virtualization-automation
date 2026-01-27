@@ -52,8 +52,8 @@ locals {
   all_tags = merge(
     var.tags,
     {
-      Terraform = "true"
       Module    = "linux"
+      OS        = "Red Hat 9.4"
     }
   )
 

@@ -64,14 +64,14 @@ if [[ ! "$ENVIRONMENT" =~ ^(prd|qlt|tst)$ ]]; then
     exit 1
 fi
 
-WORKSPACE_DIR="$TICKET_ID"
+WORKSPACE_DIR="/home/jenkins/$TICKET_ID"
 
 # Check if workspace directory exists
 if [ ! -d "$WORKSPACE_DIR" ]; then
     log_error "Workspace directory not found: $WORKSPACE_DIR"
     echo ""
     echo "Run configure.sh first:"
-    echo "  bash scripts/poc/configure.sh $TICKET_ID $ENVIRONMENT <git-repo-url>"
+    echo "  bash scripts/configure.sh $TICKET_ID $ENVIRONMENT <git-repo-url>"
     exit 1
 fi
 
@@ -93,41 +93,6 @@ if [ ! -f "$TFVARS_FILE" ]; then
     log_error "Terraform variables file not found: $TFVARS_FILE"
     exit 1
 fi
-
-# Verify vSphere credentials
-log_info "Checking vSphere credentials..."
-MISSING_VSPHERE_VARS=()
-
-if [ -z "$TF_VAR_vsphere_server" ]; then
-    MISSING_VSPHERE_VARS+=("TF_VAR_vsphere_server")
-fi
-
-if [ -z "$TF_VAR_vsphere_user" ]; then
-    MISSING_VSPHERE_VARS+=("TF_VAR_vsphere_user")
-fi
-
-if [ -z "$TF_VAR_vsphere_password" ]; then
-    MISSING_VSPHERE_VARS+=("TF_VAR_vsphere_password")
-fi
-
-if [ ${#MISSING_VSPHERE_VARS[@]} -gt 0 ]; then
-    log_error "vSphere credentials not set"
-    echo ""
-    echo "Set the following environment variables:"
-    for var in "${MISSING_VSPHERE_VARS[@]}"; do
-        echo "  export $var=\"your-value-here\""
-    done
-    echo ""
-    echo "Example:"
-    echo "  export TF_VAR_vsphere_server=\"vcenter-${ENVIRONMENT}.example.com\""
-    echo "  export TF_VAR_vsphere_user=\"svc-terraform-${ENVIRONMENT}@vsphere.local\""
-    echo "  export TF_VAR_vsphere_password=\"your-password\""
-    exit 1
-fi
-
-log_info "✓ vSphere credentials configured"
-log_info "  Server: $TF_VAR_vsphere_server"
-log_info "  User:   $TF_VAR_vsphere_user"
 
 PLAN_FILE="tfplan-${ENVIRONMENT}.out"
 
@@ -180,11 +145,7 @@ echo ""
 # Step 3: Confirm and apply
 echo ""
 log_step "[STEP 3/3] Apply changes"
-log_warn "⚠️  Review the plan above carefully"
-
-if [ "$ENVIRONMENT" = "prd" ]; then
-    log_warn "⚠️  PRODUCTION ENVIRONMENT - Double check changes!"
-fi
+log_warn "Review the plan above carefully"
 
 echo ""
 read -p "Do you want to apply these changes? (yes/no): " -r
@@ -216,6 +177,10 @@ log_info "Retrieving outputs..."
 terraform output
 
 # Completion
+# Azure backend configuration
+STORAGE_ACCOUNT_NAME="azrprdiac01weust01"
+CONTAINER_NAME="terraform-state-${ENVIRONMENT}"
+STATE_KEY="vmware/${TICKET_ID}.tfstate"
 echo ""
 echo "========================================"
 log_info "Deployment completed successfully!"
@@ -225,14 +190,14 @@ echo "Environment: $ENVIRONMENT"
 echo "vCenter:     $TF_VAR_vsphere_server"
 echo ""
 echo "State file:"
-echo "  Storage:   azrprdiac01weust01"
-echo "  Container: terraform-state-${ENVIRONMENT}"
-echo "  Key:       vmware/${TICKET_ID}.tfstate"
+echo "  Storage:   $STORAGE_ACCOUNT_NAME"
+echo "  Container: $CONTAINER_NAME"
+echo "  Key:       $STATE_KEY"
 echo ""
 echo "Useful commands:"
 echo "  terraform output                              - View all outputs"
 echo "  terraform show                                - Show current state"
 echo "  terraform state list                          - List all resources"
 echo "  terraform state show <resource>               - Show specific resource"
-echo "  bash ../scripts/poc/destroy.sh $TICKET_ID $ENVIRONMENT - Destroy resources"
+echo "  bash ../scripts/destroy.sh $TICKET_ID $ENVIRONMENT - Destroy resources"
 echo "========================================"

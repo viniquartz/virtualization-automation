@@ -1,0 +1,109 @@
+USER: vw_terraform@vsphere.local
+PASS: cmfK!or!wpt!vs!e15gr
+
+VCENTER 01: vcenterprd01.tapnet.tap.pt
+	DATACENTER: TAP_CPD1
+	CLUSTER: CPD1_ESX7
+
+VCENTER 02: vcenterprd02.tapnet.tap.pt
+	DATACENTER: TAP_CPD2
+    CLUSTER: CPD2_ESX7
+
+
+UPDATES:
+Atualizar os modulos, naming
+    -> nao tem "-" é somente <purpose><environment><instance> onde inpar é no CPD1 e par é no CPD2
+
+as variaveis de vcenter_url, vcenter_user e vcenter_pass vai ser exportada ou usada como secret do jenkins.
+    -> nao tem que passar isso via codigo.
+
+acredito que criar um modulo disk é a melhor opcao para genrenciar discos adicionais
+    -> pode se usar separado para windows e linux. basta atachar depois. (verificar se é possivel.)
+
+Temos dois vcenter, temos que achar solucoes para verificar.
+    -> criar mais de uma vm, setando somente qtd e vai musar somente a instancia.
+        -> para vms com nome diferentes deve se chamar o modulo novamente.
+    -> variavel de cpd1 ou cpd2 ou os dois, e quando for os dois, deve replicar nos dois a mesma config.
+        -> projeto x, duas vms, 1 linux e 2 windows(mesmo nome), cpds(cpd1 e cpd2):
+            -> entrar em um for, para ser criado a solucao nos cpds.
+            ou seja, sera criado 3 vms, em cada cpd.
+    -> tudo que for do cpd1 deve ser inpar e tudo que é do cpd2 deve ser par. instance
+    -> deve validar qual o melhor esx para criar as vms. ou pode ser setado no projeto.
+    -> caso nao seja especificado a folder, vai para folder padrao.
+    -> datastore pode ser setado ou será criado no padrao.
+
+
+
+A ideia é que no job do Jenkins a pessoa deve selecionar o CPD1, CPD2 ou criar nos dois.
+
+new virtual machine:
+    - create a new vm 
+    - deploy from template
+
+
+Packer cria golden image (Projeto isolado, que vai rodar poucas vezes no ano.)
+            | Usado só para criar as imagens e criar template no vmware
+            _ 
+Terraform para provisionar (Anexo A no final - forma manual teste)
+            | criar nova ou selecionar template
+            | organizar no vmware + compute
+            | selecionar esx (sempre selecionar o que tem mais computacao disponivel)
+            | compatibilidade
+            | os family (windows, linux, outro)
+            | hardware
+                | HARDWARE: cpu, memory, hard disk, scsi controller, network, cd/dvd, video card, sata controller, security devices, other
+                | OPTIONS:
+                | ADVANCED PARAMETERS:
+            | storage ?
+            | network ?
+            _
+Cloud init para configurar
+            | definir hostname
+            | criar usuários
+            | injetar chave SSH
+            | configurar rede
+            | executar scripts (bootstrap)
+            | justar timezone, locale
+            | registrar VM em ferramentas internas
+            _ 
+
+
+
+
+Perguntas:
+    1.Devo criar um projeto para cada? Que no nome do projeto seja o ticket.
+        Ou devo usar um projeto template, e no momento da execução leia os valores do job do Jenkins
+        Sendo assim editando o project template.
+
+        Isso diminui o trabalho, mas vai ficar dificil replicar um alteracao,
+            por exemplo, tenho que alterar somente a qtd de memoria. teria que selecionar tudo certo.
+
+        Com o projeto para cada, fica mais facil auditar e fazer mudancas corretas.
+    2.Seria interessante adicionar um changelog em cada projeto.
+    3.Depois de selecionar o guest_os da vm como integrar com o cloud init?
+
+
+Anexo:
+(A)
+Ready to complete
+
+Click Finish to start creation.
+Virtual machine name	IACTSTSVS01
+Folder	TerraformTests
+Host	esxprd109.tapnet.tap.pt
+Datastore	PS04_ESX2_CPDMIG 
+VM storage policy	
+Compatibility	ESXi 7.0 U2 and later (VM version 19)
+Guest OS name	Red Hat Enterprise Linux 9 (64-bit)
+Virtualization Based Security	Disabled
+CPUs	1
+Memory	2 GB
+NICs	1
+NIC 1 network	AUTOMTNPRD (LAN-CPD1)
+NIC 1 type	VMXNET 3
+SCSI controller 1	VMware Paravirtual
+ New hard disk 1
+Capacity	16 GB
+Datastore	PS04_ESX2_CPDMIG 
+Virtual device node	SCSI(0:0)
+Mode	Dependent

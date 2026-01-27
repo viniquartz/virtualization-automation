@@ -45,15 +45,14 @@ log_step() {
 
 TICKET_ID=${1}
 ENVIRONMENT=${2}
-GIT_REPO_URL=${3}
+GITLAB_REPO_URL=${3}
 
-if [ -z "$TICKET_ID" ] || [ -z "$ENVIRONMENT" ] || [ -z "$GIT_REPO_URL" ]; then
+if [ -z "$TICKET_ID" ] || [ -z "$ENVIRONMENT" ] || [ -z "$GITLAB_REPO_URL" ]; then
     log_error "Missing required parameters"
     echo "Usage: $0 <ticket-id> <environment> <git-repo-url>"
     echo ""
     echo "Examples:"
-    echo "  $0 OPS-1234 tst https://github.com/yourorg/virtualization-automation.git"
-    echo "  $0 OPS-5678 prd https://github.com/yourorg/virtualization-automation.git"
+    echo "  $0 OPS-1234 tst https://gitlab.tap.pt/digital-infrastructure/virtualizacao/terraform/virtualizacao-terraform-project-template.git"
     exit 1
 fi
 
@@ -62,12 +61,6 @@ if [[ ! "$ENVIRONMENT" =~ ^(prd|qlt|tst)$ ]]; then
     log_error "Invalid environment: $ENVIRONMENT"
     echo "Valid environments: prd, qlt, tst"
     exit 1
-fi
-
-# Validate ticket ID format (alphanumeric with dash)
-if [[ ! "$TICKET_ID" =~ ^[A-Z]+-[0-9]+$ ]]; then
-    log_warn "Ticket ID format may be invalid: $TICKET_ID"
-    log_warn "Expected format: PROJECT-1234 (e.g., OPS-1234, INFRA-567)"
 fi
 
 # Check if Terraform is installed
@@ -90,11 +83,11 @@ if ! az account show &> /dev/null; then
     log_error "Not authenticated to Azure"
     echo ""
     echo "Run azure-login.sh first:"
-    echo "  bash scripts/poc/azure-login.sh"
+    echo "  bash scripts/azure-login.sh"
     exit 1
 fi
 
-# Check vSphere credentials
+# Verify vSphere credentials
 log_info "Checking vSphere credentials..."
 MISSING_VSPHERE_VARS=()
 
@@ -111,187 +104,144 @@ if [ -z "$TF_VAR_vsphere_password" ]; then
 fi
 
 if [ ${#MISSING_VSPHERE_VARS[@]} -gt 0 ]; then
-    log_warn "vSphere credentials not set (required for deployment)"
+    log_error "vSphere credentials not set"
     echo ""
-    echo "Set the following environment variables before deploying:"
+    echo "Set the following environment variables:"
     for var in "${MISSING_VSPHERE_VARS[@]}"; do
         echo "  export $var=\"your-value-here\""
     done
     echo ""
     echo "Example:"
-    echo "  export TF_VAR_vsphere_server=\"vcenter-tst.example.com\""
-    echo "  export TF_VAR_vsphere_user=\"svc-terraform@vsphere.local\""
+    echo "  export TF_VAR_vsphere_server=\"vcenter-${ENVIRONMENT}.example.com\""
+    echo "  export TF_VAR_vsphere_user=\"svc-terraform-${ENVIRONMENT}@vsphere.local\""
     echo "  export TF_VAR_vsphere_password=\"your-password\""
-    echo ""
-    log_info "Continuing with configuration (you can set these later)..."
+    exit 1
 fi
 
-WORKSPACE_DIR="$TICKET_ID"
-BACKEND_CONFIG_FILE="$WORKSPACE_DIR/backend-config.tfbackend"
+log_info "✓ vSphere credentials configured"
+log_info "  Server: $TF_VAR_vsphere_server"
+log_info "  User:   $TF_VAR_vsphere_user"
 
+# ============================================
+# GitLab Authentication and Clone
+# ============================================
+
+log_info "Preparing to clone repository from GitLab"
+
+WORKSPACE_DIR="/home/jenkins/$TICKET_ID"
+
+# Check if GITLAB_TOKEN is set
+if [ -z "$GITLAB_TOKEN" ]; then
+    log_error "GITLAB_TOKEN environment variable not set"
+    echo ""
+    echo "Set your GitLab Personal Access Token:"
+    echo "  export GITLAB_TOKEN='your-token-here'"
+    exit 1
+fi
+
+# Check if directory already exists
+if [ -d "$WORKSPACE_DIR" ]; then
+    log_warn "Directory '$WORKSPACE_DIR' already exists"
+    read -p "Remove and re-clone? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        rm -rf "$WORKSPACE_DIR"
+        log_info "Removed existing directory"
+    else
+        log_info "Using existing directory"
+        cd "$WORKSPACE_DIR"
+        git pull origin main || git pull origin master || log_warn "Could not pull latest changes"
+        cd ..
+    fi
+fi
+
+if [ ! -d "$WORKSPACE_DIR" ]; then
+    # Inject token into URL for authentication
+    AUTHENTICATED_URL=$(echo "$GITLAB_REPO_URL" | sed "s|https://|https://oauth2:${GITLAB_TOKEN}@|")
+    
+    log_info "Cloning repository..."
+    if git clone "$AUTHENTICATED_URL" "$WORKSPACE_DIR"; then
+        log_info "✓ Repository cloned successfully to $WORKSPACE_DIR"
+        
+        # Remove credentials from git config
+        cd "$WORKSPACE_DIR"
+        git remote set-url origin "$GITLAB_REPO_URL"
+        cd ..
+    else
+        log_error "Failed to clone repository"
+        echo ""
+        echo "Possible issues:"
+        echo "  - Invalid GITLAB_TOKEN"
+        echo "  - Repository URL incorrect"
+        echo "  - No access to repository"
+        exit 1
+    fi
+fi
+
+# ============================================
+# Backend Configuration
+# ============================================
 # Azure backend configuration
-STORAGE_ACCOUNT_NAME="azrprdiac01weust01"
 RESOURCE_GROUP_NAME="azr-prd-iac01-weu-rg"
+STORAGE_ACCOUNT_NAME="azrprdiac01weust01"
 CONTAINER_NAME="terraform-state-${ENVIRONMENT}"
 STATE_KEY="vmware/${TICKET_ID}.tfstate"
 
-echo "========================================"
-echo "Terraform Project Configuration"
-echo "========================================"
-echo "Ticket ID:    $TICKET_ID"
-echo "Environment:  $ENVIRONMENT"
-echo "Repository:   $GIT_REPO_URL"
-echo "Workspace:    $(pwd)/$WORKSPACE_DIR"
-echo ""
-echo "Backend Configuration:"
-echo "  Storage:    $STORAGE_ACCOUNT_NAME"
-echo "  Container:  $CONTAINER_NAME"
-echo "  State Key:  $STATE_KEY"
-echo "========================================"
+log_info "Configuring Terraform backend"
+log_info "  Project: $PROJECT_NAME"
+log_info "  Environment: $ENVIRONMENT"
+log_info "  Container: $CONTAINER_NAME"
+log_info "  State Key: $STATE_KEY"
 
-# ============================================
-# Step 1: Clone Repository
-# ============================================
+# Create backend configuration file
+cd "$WORKSPACE_DIR"
 
-log_step "[STEP 1/4] Cloning repository"
-
-# Remove existing directory if exists
-if [ -d "$WORKSPACE_DIR" ]; then
-    log_warn "Workspace directory already exists: $WORKSPACE_DIR"
-    read -p "Remove existing directory? (yes/no): " -r
-    echo
-    if [[ $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
-        log_info "Removing existing directory..."
-        rm -rf "$WORKSPACE_DIR"
-    else
-        log_error "Cannot proceed with existing directory"
-        exit 1
-    fi
-fi
-
-log_info "Cloning repository..."
-if git clone "$GIT_REPO_URL" "$WORKSPACE_DIR" 2>&1; then
-    log_info "✓ Repository cloned successfully"
-else
-    log_error "Failed to clone repository"
-    echo ""
-    echo "Possible causes:"
-    echo "  1. Repository URL is incorrect"
-    echo "  2. No access to repository (check SSH keys or credentials)"
-    echo "  3. Network connectivity issues"
-    exit 1
-fi
-
-# ============================================
-# Step 2: Copy Template
-# ============================================
-
-log_step "[STEP 2/4] Setting up project structure"
-
-cd "$WORKSPACE_DIR" || exit 1
-
-# Check if terraform-project-template exists
-if [ ! -d "terraform-project-template" ]; then
-    log_error "terraform-project-template directory not found in repository"
-    exit 1
-fi
-
-# Copy template files to root
-log_info "Copying template files..."
-cp terraform-project-template/*.tf ./ 2>/dev/null || true
-cp -r terraform-project-template/environments ./ 2>/dev/null || true
-cp -r terraform-project-template/terraform-modules ./ 2>/dev/null || true
-
-# Verify required files
-REQUIRED_FILES=("main.tf" "variables.tf" "provider.tf")
-for file in "${REQUIRED_FILES[@]}"; do
-    if [ ! -f "$file" ]; then
-        log_error "Required file not found: $file"
-        exit 1
-    fi
-done
-
-log_info "✓ Project structure created"
-
-# ============================================
-# Step 3: Generate Backend Configuration
-# ============================================
-
-log_step "[STEP 3/4] Generating backend configuration"
-
-# Create backend.tf dynamically
-cat > backend.tf <<EOF
-terraform {
-  backend "azurerm" {}
-}
-EOF
-
-log_info "✓ Backend configuration file created: backend.tf"
-
-# Create backend config file
 cat > backend-config.tfbackend <<EOF
-# Generated by configure.sh
-# Date: $(date '+%Y-%m-%d %H:%M:%S')
-# Ticket: $TICKET_ID
-# Environment: $ENVIRONMENT
-
-resource_group_name  = "$RESOURCE_GROUP_NAME"
-storage_account_name = "$STORAGE_ACCOUNT_NAME"
+resource_group_name  = "$RESOURCE_GROUP"
+storage_account_name = "$STORAGE_ACCOUNT"
 container_name       = "$CONTAINER_NAME"
 key                  = "$STATE_KEY"
 EOF
 
-log_info "✓ Backend configuration created: backend-config.tfbackend"
-
+log_info "✓ Generated backend-config.tfbackend"
 # ============================================
-# Step 4: Initialize Terraform
+# Terraform Initialization
 # ============================================
 
-log_step "[STEP 4/4] Initializing Terraform"
+# Configure Git credentials for Terraform module downloads
+log_info "Configuring Git credentials for Terraform modules..."
+git config --global credential.helper store
 
-log_info "Running terraform init..."
+# Extract GitLab host from URL
+GITLAB_HOST=$(echo "$GITLAB_REPO_URL" | sed -E 's|https?://([^/]+)/.*|\1|')
 
-if terraform init -backend-config="backend-config.tfbackend" -upgrade; then
-    log_info "✓ Terraform initialized successfully"
+# Store credentials for Terraform to download modules
+echo "https://oauth2:${GITLAB_TOKEN}@${GITLAB_HOST}" > ~/.git-credentials
+
+log_info "Initializing Terraform..."
+if terraform init -backend-config=backend-config.tfbackend -reconfigure; then
+    # Clean up credentials after successful init
+    rm -f ~/.git-credentials
+    git config --global --unset credential.helper
+
+    echo ""
+    log_info "=========================================="
+    log_info "Configuration completed successfully!"
+    log_info "=========================================="
+    log_info "Ticket ID:   $TICKET_ID"
+    log_info "Environment: $ENVIRONMENT"
+    log_info "Workspace:   $(pwd)"
+    log_info "State:       $STORAGE_ACCOUNT/$CONTAINER_NAME/$STATE_KEY"
+    echo ""
+    log_info "Next steps:"
+    echo "  cd $WORKSPACE_DIR"
+    echo "  terraform plan -var-file='environments/$ENVIRONMENT/terraform.tfvars'"
+    echo "  terraform apply -var-file='environments/$ENVIRONMENT/terraform.tfvars'"
 else
-    log_error "Terraform initialization failed"
-    echo ""
-    echo "Possible causes:"
-    echo "  1. Backend storage account not accessible"
-    echo "  2. Container does not exist"
-    echo "  3. Insufficient permissions"
-    echo ""
-    echo "Verify backend:"
-    echo "  az storage account show \\"
-    echo "    --name $STORAGE_ACCOUNT_NAME \\"
-    echo "    --resource-group $RESOURCE_GROUP_NAME"
+    # Clean up credentials on failure
+    rm -f ~/.git-credentials
+    git config --global --unset credential.helper
+
+    log_error "Failed to initialize Terraform backend"
     exit 1
 fi
-
-# ============================================
-# Completion
-# ============================================
-
-cd ..
-
-echo ""
-echo "========================================"
-log_info "Configuration completed successfully!"
-echo "========================================"
-echo "Ticket ID:   $TICKET_ID"
-echo "Environment: $ENVIRONMENT"
-echo "Workspace:   $(pwd)/$WORKSPACE_DIR"
-echo ""
-echo "State file location:"
-echo "  Storage:   $STORAGE_ACCOUNT_NAME"
-echo "  Container: $CONTAINER_NAME"
-echo "  Key:       $STATE_KEY"
-echo ""
-echo "Next steps:"
-echo "  1. Review variables: cd $WORKSPACE_DIR && cat environments/$ENVIRONMENT/terraform.tfvars"
-echo "  2. Set vSphere credentials (if not already set):"
-echo "     export TF_VAR_vsphere_server=\"vcenter.example.com\""
-echo "     export TF_VAR_vsphere_user=\"svc-terraform@vsphere.local\""
-echo "     export TF_VAR_vsphere_password=\"your-password\""
-echo "  3. Deploy: bash scripts/poc/deploy.sh $TICKET_ID $ENVIRONMENT"
-echo "========================================"
