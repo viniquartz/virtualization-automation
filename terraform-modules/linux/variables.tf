@@ -59,6 +59,12 @@ variable "cluster" {
   type        = string
 }
 
+variable "esx_host" {
+  description = "Optional specific ESXi host for VM placement (e.g., esxprd109.tapnet.tap.pt). If not specified, DRS will select automatically."
+  type        = string
+  default     = null
+}
+
 variable "datastore" {
   description = "vSphere datastore name for VM storage"
   type        = string
@@ -69,9 +75,16 @@ variable "network" {
   type        = string
 }
 
-variable "template_name" {
-  description = "Name of the Linux template to clone from"
+variable "guest_id" {
+  description = "Guest OS identifier (e.g., rhel9_64Guest, centos8_64Guest)"
   type        = string
+  default     = "rhel9_64Guest"
+}
+
+variable "network_adapter_type" {
+  description = "Network adapter type (vmxnet3, e1000e, e1000)"
+  type        = string
+  default     = "vmxnet3"
 }
 
 # ==============================================================================

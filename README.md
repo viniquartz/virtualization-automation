@@ -5,7 +5,7 @@ Automação de infraestrutura VMware vSphere usando Terraform com backend Azure 
 ## 🚀 Features
 
 - ✅ **Módulos Terraform Reusáveis** para Linux e Windows
-- ✅ **Naming Convention Automático** (< purpose>-<env>-<instance>)
+- ✅ **Naming Convention Automático** (purposeenvinstance sem hífens)
 - ✅ **Backend Azure Storage** com configuração por ambiente
 - ✅ **Validações de Recursos** (CPU, memória, disco)
 - ✅ **Gerenciamento de Tags** com merge automático
@@ -89,22 +89,55 @@ virtualization-automation/
 git clone <repo-url>
 cd virtualization-automation
 
-# Login no Azure
-./scripts/azure-login.sh
+# Exportar credenciais vSphere (OBRIGATÓRIO)
+export TF_VAR_vsphere_server="vcenterprd01.tapnet.tap.pt"
+export TF_VAR_vsphere_user="vw_terraform@vsphere.local"
+export TF_VAR_vsphere_password="your-password"
 
-# Verificar acesso ao vCenter
-ping vcenter.example.com
+# Login no Azure (para backend)
+bash scripts/azure-login.sh
 ```
 
 ### 2. Criar Novo Projeto
 
 ```bash
-# Copiar template
-cp -r terraform-project-template my-vmware-project
-cd my-vmware-project
+# Configurar projeto (clona template, cria backend, executa init)
+bash scripts/configure.sh OPS-1234 tst https://github.com/yourorg/virtualization-automation.git
 
-# Escolher ambiente
-export ENV=tst  # ou qlt, prd
+# Ajustar configurações
+cd OPS-1234
+vi environments/tst/terraform.tfvars
+
+# Exemplo: Selecionar CPD e configurar VMs
+cpd = "cpd1"  # ou "cpd2"
+
+linux_vm_purpose  = "iac"
+linux_vm_sequence = 1  # CPD1: 01, CPD2: 02
+
+# Deploy
+cd ..
+bash scripts/deploy.sh OPS-1234 tst
+```
+
+### 3. Naming Convention e Seleção de CPD
+
+**Padrão:** `<PURPOSE><ENVIRONMENT><INSTANCE>` (sem hífens)
+
+- `IACTST01` = IAC + TST + 01 (CPD1 - sequence 1)
+- `WEBTST03` = WEB + TST + 03 (CPD1 - sequence 2)
+- `APPTST02` = APP + TST + 02 (CPD2 - sequence 1)
+
+**Regras:**
+
+- Selecione `cpd = "cpd1"` ou `cpd = "cpd2"`
+- Instance number é calculado automaticamente:
+  - **CPD1**: sequence 1→01, 2→03, 3→05 (ímpares)
+  - **CPD2**: sequence 1→02, 2→04, 3→06 (pares)
+- Máximo 15 caracteres
+- Uppercase no VMware, lowercase no hostname
+
+**Documentação:** [CPD Selection Guide](docs/CPD-SELECTION.md)
+
 ```
 
 ### 3. Configurar Backend

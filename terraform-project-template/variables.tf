@@ -36,6 +36,16 @@ variable "ticket_id" {
 # VSPHERE CONNECTION
 # ==============================================================================
 
+variable "cpd" {
+  description = "CPD selection: cpd1, cpd2, or both (both creates VMs in both datacenters)"
+  type        = string
+
+  validation {
+    condition     = contains(["cpd1", "cpd2", "both"], var.cpd)
+    error_message = "CPD must be: cpd1, cpd2, or both"
+  }
+}
+
 variable "vsphere_server" {
   description = "vSphere server address"
   type        = string
@@ -63,27 +73,43 @@ variable "vsphere_allow_unverified_ssl" {
 # ==============================================================================
 
 variable "vsphere_datacenter" {
-  description = "vSphere datacenter name"
+  description = "vSphere datacenter name (optional, derived from cpd if not set)"
   type        = string
+  default     = null
 }
 
 variable "vsphere_cluster" {
-  description = "vSphere cluster name"
+  description = "vSphere cluster name (optional, derived from cpd if not set)"
   type        = string
+  default     = null
 }
 
 variable "vsphere_datastore" {
   description = "vSphere datastore name"
   type        = string
+  default     = "PS04_ESX2_CPDMIG" # Default from TAP standard
 }
 
 variable "vsphere_network" {
-  description = "vSphere network/portgroup name"
+  description = "vSphere network/portgroup name (optional, derived from cpd if not set)"
   type        = string
+  default     = null
+}
+
+variable "vsphere_folder" {
+  description = "vSphere VM folder path"
+  type        = string
+  default     = "TerraformTests" # Default from TAP standard
 }
 
 variable "vsphere_resource_pool" {
   description = "Optional vSphere resource pool name"
+  type        = string
+  default     = null
+}
+
+variable "vsphere_esx_host" {
+  description = "Optional specific ESXi host for VM placement (e.g., esxprd109.tapnet.tap.pt). If not specified, DRS will automatically select the best host based on available resources."
   type        = string
   default     = null
 }
@@ -129,10 +155,26 @@ variable "linux_vm_purpose" {
   default     = "linux"
 }
 
-variable "linux_instance_number" {
-  description = "Linux VM instance number"
+variable "linux_vm_count" {
+  description = "Number of Linux VMs to create (1-10)"
   type        = number
   default     = 1
+
+  validation {
+    condition     = var.linux_vm_count >= 1 && var.linux_vm_count <= 10
+    error_message = "VM count must be between 1 and 10"
+  }
+}
+
+variable "linux_vm_start_sequence" {
+  description = "Starting sequence number for Linux VMs (default: 1)"
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.linux_vm_start_sequence >= 1 && var.linux_vm_start_sequence <= 90
+    error_message = "Start sequence must be between 1 and 90"
+  }
 }
 
 variable "linux_cpu_count" {
@@ -153,20 +195,15 @@ variable "linux_disk_size_gb" {
   default     = 50
 }
 
-variable "linux_template" {
-  description = "Linux template name"
+variable "linux_guest_id" {
+  description = "Linux guest OS identifier (e.g., rhel9_64Guest, centos8_64Guest)"
   type        = string
+  default     = "rhel9_64Guest"
 }
 
 variable "linux_ipv4_address" {
   description = "Linux VM IPv4 address"
   type        = string
-}
-
-variable "linux_vm_folder" {
-  description = "Linux VM vSphere folder path"
-  type        = string
-  default     = null
 }
 
 variable "linux_annotation" {
@@ -201,10 +238,26 @@ variable "windows_vm_purpose" {
   default     = "win"
 }
 
-variable "windows_instance_number" {
-  description = "Windows VM instance number"
+variable "windows_vm_count" {
+  description = "Number of Windows VMs to create (1-10)"
   type        = number
   default     = 1
+
+  validation {
+    condition     = var.windows_vm_count >= 1 && var.windows_vm_count <= 10
+    error_message = "VM count must be between 1 and 10"
+  }
+}
+
+variable "windows_vm_start_sequence" {
+  description = "Starting sequence number for Windows VMs (default: 1)"
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.windows_vm_start_sequence >= 1 && var.windows_vm_start_sequence <= 90
+    error_message = "Start sequence must be between 1 and 90"
+  }
 }
 
 variable "windows_cpu_count" {
@@ -225,9 +278,10 @@ variable "windows_disk_size_gb" {
   default     = 100
 }
 
-variable "windows_template" {
-  description = "Windows template name"
+variable "windows_guest_id" {
+  description = "Windows guest OS identifier (e.g., windows2019srvNext_64Guest, windows2022srvNext_64Guest)"
   type        = string
+  default     = "windows2019srvNext_64Guest"
 }
 
 variable "windows_ipv4_address" {
@@ -257,12 +311,6 @@ variable "windows_auto_logon" {
   description = "Enable Windows auto-logon"
   type        = bool
   default     = false
-}
-
-variable "windows_vm_folder" {
-  description = "Windows VM vSphere folder path"
-  type        = string
-  default     = null
 }
 
 variable "windows_annotation" {

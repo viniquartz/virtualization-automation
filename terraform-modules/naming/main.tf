@@ -6,18 +6,20 @@ terraform {
 # NAMING CONVENTION
 # Pattern: <purpose><environment><instance>
 # Max length: 15 characters
-# Example: web-tst-01, app-prd-03
+# Example: webprd01, appqlt02
+# CPD1: odd instance numbers (01, 03, 05...)
+# CPD2: even instance numbers (02, 04, 06...)
 # ==============================================================================
 
 locals {
   # Validate total length
-  vm_name_length = length("${var.purpose}-${var.environment}-${format("%02d", var.instance_number)}")
+  vm_name_length = length("${upper(var.purpose)}${upper(var.environment)}${format("%02d", var.instance_number)}")
 
-  # Generate VM name
-  vm_name = "${var.purpose}-${var.environment}-${format("%02d", var.instance_number)}"
+  # Generate VM name (uppercase, no hyphens)
+  vm_name = "${upper(var.purpose)}${upper(var.environment)}${format("%02d", var.instance_number)}"
 
-  # Generate hostname (same as VM name for consistency)
-  hostname = local.vm_name
+  # Generate hostname (lowercase for DNS compatibility)
+  hostname = lower(local.vm_name)
 }
 
 # Validation check

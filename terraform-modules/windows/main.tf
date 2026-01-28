@@ -38,8 +38,9 @@ data "vsphere_network" "network" {
   datacenter_id = data.vsphere_datacenter.dc.id
 }
 
-data "vsphere_virtual_machine" "template" {
-  name          = var.template_name
+data "vsphere_host" "esx" {
+  count         = var.esx_host != null ? 1 : 0
+  name          = var.esx_host
   datacenter_id = data.vsphere_datacenter.dc.id
 }
 
@@ -52,8 +53,8 @@ locals {
   all_tags = merge(
     var.tags,
     {
-      Module    = "windows"
-      OS        = "Windows Server"
+      Module = "windows"
+      OS     = "Windows Server"
     }
   )
 
@@ -72,12 +73,13 @@ resource "vsphere_virtual_machine" "vm" {
   name             = var.vm_name
   resource_pool_id = local.resource_pool_id
   datastore_id     = data.vsphere_datastore.datastore.id
+  host_system_id   = var.esx_host != null ? data.vsphere_host.esx[0].id : null
   folder           = var.vm_folder
   annotation       = var.annotation
 
   num_cpus = var.cpu_count
   memory   = var.memory_mb
-  guest_id = data.vsphere_virtual_machine.template.guest_id
+  guest_id = var.guest_id
 
   # Timeouts
   wait_for_guest_net_timeout = var.wait_for_guest_net_timeout
@@ -86,7 +88,7 @@ resource "vsphere_virtual_machine" "vm" {
   # Network interface
   network_interface {
     network_id   = data.vsphere_network.network.id
-    adapter_type = data.vsphere_virtual_machine.template.network_interface_types[0]
+    adapter_type = var.network_adapter_type
   }
 
   # Primary disk

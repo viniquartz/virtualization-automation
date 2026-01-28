@@ -1,41 +1,63 @@
-# Linux VM Outputs
-output "linux_vm_id" {
-  description = "Linux VM ID"
-  value       = var.create_linux_vm ? module.linux_vm[0].vm_id : null
+# ==============================================================================
+# LINUX VMs OUTPUTS
+# ==============================================================================
+
+output "linux_vms" {
+  description = "Linux VMs details"
+  value = {
+    for key, vm in module.linux_vm : key => {
+      vm_id       = vm.vm_id
+      vm_name     = vm.vm_name
+      vm_ip       = vm.vm_ip
+      vm_uuid     = vm.vm_uuid
+      vm_hostname = vm.vm_hostname
+      cpd         = local.linux_vms[key].cpd
+      sequence    = local.linux_vms[key].sequence
+    }
+  }
 }
 
-output "linux_vm_name" {
-  description = "Linux VM name"
-  value       = var.create_linux_vm ? module.linux_vm[0].vm_name : null
+output "linux_vm_count" {
+  description = "Total number of Linux VMs created"
+  value       = length(module.linux_vm)
 }
 
-output "linux_vm_ip" {
-  description = "Linux VM IP address"
-  value       = var.create_linux_vm ? module.linux_vm[0].vm_ip : null
+# ==============================================================================
+# WINDOWS VMs OUTPUTS
+# ==============================================================================
+
+output "windows_vms" {
+  description = "Windows VMs details"
+  value = {
+    for key, vm in module.windows_vm : key => {
+      vm_id       = vm.vm_id
+      vm_name     = vm.vm_name
+      vm_ip       = vm.vm_ip
+      vm_uuid     = vm.vm_uuid
+      vm_hostname = vm.vm_hostname
+      cpd         = local.windows_vms[key].cpd
+      sequence    = local.windows_vms[key].sequence
+    }
+  }
 }
 
-output "linux_vm_uuid" {
-  description = "Linux VM UUID"
-  value       = var.create_linux_vm ? module.linux_vm[0].vm_uuid : null
+output "windows_vm_count" {
+  description = "Total number of Windows VMs created"
+  value       = length(module.windows_vm)
 }
 
-# Windows VM Outputs
-output "windows_vm_id" {
-  description = "Windows VM ID"
-  value       = var.create_windows_vm ? module.windows_vm[0].vm_id : null
-}
+# ==============================================================================
+# SUMMARY OUTPUT
+# ==============================================================================
 
-output "windows_vm_name" {
-  description = "Windows VM name"
-  value       = var.create_windows_vm ? module.windows_vm[0].vm_name : null
-}
-
-output "windows_vm_ip" {
-  description = "Windows VM IP address"
-  value       = var.create_windows_vm ? module.windows_vm[0].vm_ip : null
-}
-
-output "windows_vm_uuid" {
-  description = "Windows VM UUID"
-  value       = var.create_windows_vm ? module.windows_vm[0].vm_uuid : null
+output "deployment_summary" {
+  description = "Deployment summary"
+  value = {
+    environment   = var.environment
+    ticket_id     = var.ticket_id
+    cpd_selection = var.cpd
+    linux_vms     = length(module.linux_vm)
+    windows_vms   = length(module.windows_vm)
+    total_vms     = length(module.linux_vm) + length(module.windows_vm)
+  }
 }

@@ -33,11 +33,13 @@ export ARM_CLIENT_SECRET="xxx"
 export ARM_SUBSCRIPTION_ID="xxx"
 export ARM_TENANT_ID="xxx"
 
-# vSphere credentials
-export TF_VAR_vsphere_server="vcenter.example.com"
-export TF_VAR_vsphere_user="svc-terraform@vsphere.local"
+# vSphere credentials - OBRIGATÓRIO (não passar via código)
+export TF_VAR_vsphere_server="vcenterprd01.tapnet.tap.pt"
+export TF_VAR_vsphere_user="vw_terraform@vsphere.local"
 export TF_VAR_vsphere_password="your-password"
 ```
+
+**IMPORTANTE:** Credenciais vSphere DEVEM ser passadas via variáveis de ambiente, não via terraform.tfvars!
 
 ### 2. Autenticar no Azure
 
@@ -273,6 +275,7 @@ bash scripts/destroy.sh OPS-1234 tst
 ## Arquivos Temporários
 
 Scripts criam e usam:
+
 - `backend-config.tfbackend`
 - `.terraform/`
 - `.terraform.lock.hcl`
@@ -309,6 +312,7 @@ bash scripts/azure-login.sh
 
 **Solução:**
 Verificar se o backend Azure foi criado:
+
 ```bash
 az storage account show --name azrprdiac01weust01 --resource-group azr-prd-iac01-weu-rg
 ```
@@ -319,6 +323,7 @@ az storage account show --name azrprdiac01weust01 --resource-group azr-prd-iac01
 
 **Solução:**
 Verificar credenciais vSphere:
+
 ```bash
 # Testar conectividade
 ping vcenter-tst.example.com
@@ -333,6 +338,7 @@ echo $TF_VAR_vsphere_user
 **Sintoma:** `Error acquiring the state lock`
 
 **Solução:**
+
 ```bash
 # Aguardar liberação do lock ou forçar unlock
 cd OPS-1234
@@ -345,6 +351,7 @@ terraform force-unlock <lock-id>
 
 **Solução:**
 Verificar se módulos estão no repositório correto:
+
 ```bash
 ls -la terraform-modules/
 ```
@@ -352,12 +359,14 @@ ls -la terraform-modules/
 ## Segurança
 
 ### Para Testes Locais
+
 - Use service principal dedicado para testes
 - Limite escopo à subscription de teste
 - Use credenciais de curta duração
 - Nunca commit credenciais no git
 
 ### Armazenamento de Credenciais
+
 - ❌ Nunca hardcode credenciais nos scripts
 - ❌ Nunca commit credenciais no repositório
 - ✅ Use variáveis de ambiente
@@ -366,6 +375,7 @@ ls -la terraform-modules/
 ## Uso em Produção
 
 Para deployments de produção:
+
 1. Use pipelines Jenkins (já configuradas)
 2. Configurar credentials no Jenkins
 3. Configurar approval gates
