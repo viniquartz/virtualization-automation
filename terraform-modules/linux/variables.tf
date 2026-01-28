@@ -89,91 +89,10 @@ variable "network_adapter_type" {
 
 # ==============================================================================
 # NETWORK CONFIGURATION
+# NOTE: VMs created from scratch use DHCP automatically.
+# Static IP configuration must be done via cloud-init or Ansible post-deployment.
+# Network variables removed as clone/customize blocks are not supported without templates.
 # ==============================================================================
-
-variable "domain" {
-  description = "DNS domain name for the VM (optional, for static IP configuration)"
-  type        = string
-  default     = null
-}
-
-variable "ipv4_address" {
-  description = "Static IPv4 address for the VM (optional, uses DHCP if not set)"
-  type        = string
-  default     = null
-
-  validation {
-    condition     = var.ipv4_address == null || can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.ipv4_address))
-    error_message = "IPv4 address must be in valid format (e.g., 192.168.1.10) or null"
-  }
-}
-
-variable "ipv4_netmask" {
-  description = "IPv4 network prefix length (e.g., 24 for /24)"
-  type        = number
-  default     = 24
-
-  validation {
-    condition     = var.ipv4_netmask >= 8 && var.ipv4_netmask <= 30
-    error_message = "Netmask must be between 8 and 30"
-  }
-}
-
-variable "ipv4_gateway" {
-  description = "IPv4 default gateway address (optional)"
-  type        = string
-  default     = null
-
-  validation {
-    condition     = var.ipv4_gateway == null || can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.ipv4_gateway))
-    error_message = "Gateway must be in valid IPv4 format or null"
-  }
-}
-
-variable "dns_servers" {
-  description = "List of DNS server addresses (optional)"
-  type        = list(string)
-  default     = []
-
-  validation {
-    condition     = length(var.dns_servers) <= 3
-    error_message = "Must provide maximum 3 DNS servers"
-  }
-}
-
-# ==============================================================================
-# RESOURCE LIMITS
-# ==============================================================================
-
-variable "cpu_min" {
-  description = "Minimum allowed CPU count"
-  type        = number
-  default     = 1
-}
-
-variable "cpu_max" {
-  description = "Maximum allowed CPU count"
-  type        = number
-  default     = 32
-}
-
-variable "memory_min" {
-  description = "Minimum allowed memory in MB"
-  type        = number
-  default     = 1024
-}
-
-variable "memory_max" {
-  description = "Maximum allowed memory in MB"
-  type        = number
-  default     = 131072 # 128GB
-}
-
-variable "disk_min" {
-  description = "Minimum allowed disk size in GB"
-  type        = number
-  default     = 20
-}
 
 # ==============================================================================
 # TAGS

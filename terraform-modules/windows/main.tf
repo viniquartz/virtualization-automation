@@ -109,31 +109,11 @@ resource "vsphere_virtual_machine" "vm" {
     }
   }
 
-  # Network customization (optional - only if static IP is configured)
-  dynamic "clone" {
-    for_each = var.ipv4_address != null ? [1] : []
-    content {
-      customize {
-        windows_options {
-          computer_name         = var.vm_hostname
-          workgroup             = var.workgroup
-          admin_password        = var.admin_password
-          time_zone             = var.timezone
-          auto_logon            = var.auto_logon
-          auto_logon_count      = var.auto_logon_count
-          run_once_command_list = var.run_once_commands
-        }
-
-        network_interface {
-          ipv4_address = var.ipv4_address
-          ipv4_netmask = var.ipv4_netmask
-        }
-
-        ipv4_gateway    = var.ipv4_gateway
-        dns_server_list = var.dns_servers
-      }
-    }
-  }
+  # NOTE: VMs created from scratch (no template) cannot use clone/customize blocks
+  # Network configuration must be done via:
+  # - DHCP (automatic)
+  # - Sysprep unattend.xml (if provided)
+  # - Post-deployment with Ansible
 
   # Custom attributes (tags)
   custom_attributes = local.custom_attributes

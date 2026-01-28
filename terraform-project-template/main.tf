@@ -52,12 +52,12 @@ module "linux_vm" {
   guest_id   = var.linux_guest_id
   esx_host   = var.vsphere_esx_host
 
-  # Network Configuration
-  domain       = var.network_domain
-  ipv4_address = var.linux_ipv4_address
-  ipv4_netmask = var.network_ipv4_netmask
-  ipv4_gateway = var.network_ipv4_gateway
-  dns_servers  = var.network_dns_servers
+  # Network adapter
+  network_adapter_type = var.network_adapter_type
+
+  # Network Configuration (DHCP - no static IP configuration)
+  # VMs created from scratch use DHCP automatically
+  # Static IP configuration must be done via Ansible post-deployment
 
   # Tags
   tags = merge(local.common_tags, {
@@ -100,12 +100,12 @@ module "windows_vm" {
   guest_id   = var.windows_guest_id
   esx_host   = var.vsphere_esx_host
 
-  # Network Configuration
-  domain       = var.network_domain
-  ipv4_address = var.windows_ipv4_address
-  ipv4_netmask = var.network_ipv4_netmask
-  ipv4_gateway = var.network_ipv4_gateway
-  dns_servers  = var.network_dns_servers
+  # Network adapter
+  network_adapter_type = var.network_adapter_type
+
+  # Network Configuration (DHCP - no static IP configuration)
+  # VMs created from scratch use DHCP automatically
+  # Static IP configuration must be done via Ansible post-deployment
 
   # Windows Specific
   workgroup      = var.windows_workgroup

@@ -116,27 +116,19 @@ variable "vsphere_esx_host" {
 
 # ==============================================================================
 # NETWORK CONFIGURATION
+# NOTE: VMs created from scratch use DHCP automatically.
+# Network configuration must be done via Ansible post-deployment.
 # ==============================================================================
 
-variable "network_domain" {
-  description = "DNS domain name"
+variable "network_adapter_type" {
+  description = "Network adapter type (e1000, e1000e, vmxnet3)"
   type        = string
-}
+  default     = "vmxnet3"
 
-variable "network_ipv4_gateway" {
-  description = "IPv4 default gateway"
-  type        = string
-}
-
-variable "network_ipv4_netmask" {
-  description = "IPv4 network prefix length"
-  type        = number
-  default     = 24
-}
-
-variable "network_dns_servers" {
-  description = "List of DNS servers"
-  type        = list(string)
+  validation {
+    condition     = contains(["e1000", "e1000e", "vmxnet3"], var.network_adapter_type)
+    error_message = "Network adapter must be: e1000, e1000e, or vmxnet3"
+  }
 }
 
 # ==============================================================================
@@ -199,11 +191,6 @@ variable "linux_guest_id" {
   description = "Linux guest OS identifier (e.g., rhel9_64Guest, centos8_64Guest)"
   type        = string
   default     = "rhel9_64Guest"
-}
-
-variable "linux_ipv4_address" {
-  description = "Linux VM IPv4 address"
-  type        = string
 }
 
 variable "linux_annotation" {
@@ -282,11 +269,6 @@ variable "windows_guest_id" {
   description = "Windows guest OS identifier (e.g., windows2019srvNext_64Guest, windows2022srvNext_64Guest)"
   type        = string
   default     = "windows2019srvNext_64Guest"
-}
-
-variable "windows_ipv4_address" {
-  description = "Windows VM IPv4 address"
-  type        = string
 }
 
 variable "windows_workgroup" {
