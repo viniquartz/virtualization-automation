@@ -18,8 +18,8 @@ variable "cpu_count" {
   default     = 2
 
   validation {
-    condition     = var.cpu_count >= var.cpu_min && var.cpu_count <= var.cpu_max
-    error_message = "CPU count must be between ${var.cpu_min} and ${var.cpu_max}"
+    condition     = var.cpu_count >= 1 && var.cpu_count <= 32
+    error_message = "CPU count must be between 1 and 32"
   }
 }
 
@@ -29,8 +29,8 @@ variable "memory_mb" {
   default     = 4096
 
   validation {
-    condition     = var.memory_mb >= var.memory_min && var.memory_mb <= var.memory_max
-    error_message = "Memory must be between ${var.memory_min}MB and ${var.memory_max}MB"
+    condition     = var.memory_mb >= 1024 && var.memory_mb <= 131072
+    error_message = "Memory must be between 1024MB (1GB) and 131072MB (128GB)"
   }
 }
 
@@ -40,8 +40,8 @@ variable "disk_size_gb" {
   default     = 50
 
   validation {
-    condition     = var.disk_size_gb >= var.disk_min
-    error_message = "Disk size must be at least ${var.disk_min}GB"
+    condition     = var.disk_size_gb >= 10
+    error_message = "Disk size must be at least 10GB"
   }
 }
 
@@ -92,17 +92,19 @@ variable "network_adapter_type" {
 # ==============================================================================
 
 variable "domain" {
-  description = "DNS domain name for the VM"
+  description = "DNS domain name for the VM (optional, for static IP configuration)"
   type        = string
+  default     = null
 }
 
 variable "ipv4_address" {
-  description = "Static IPv4 address for the VM"
+  description = "Static IPv4 address for the VM (optional, uses DHCP if not set)"
   type        = string
+  default     = null
 
   validation {
-    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.ipv4_address))
-    error_message = "IPv4 address must be in valid format (e.g., 192.168.1.10)"
+    condition     = var.ipv4_address == null || can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.ipv4_address))
+    error_message = "IPv4 address must be in valid format (e.g., 192.168.1.10) or null"
   }
 }
 
@@ -118,22 +120,24 @@ variable "ipv4_netmask" {
 }
 
 variable "ipv4_gateway" {
-  description = "IPv4 default gateway address"
+  description = "IPv4 default gateway address (optional)"
   type        = string
+  default     = null
 
   validation {
-    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.ipv4_gateway))
-    error_message = "Gateway must be in valid IPv4 format"
+    condition     = var.ipv4_gateway == null || can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.ipv4_gateway))
+    error_message = "Gateway must be in valid IPv4 format or null"
   }
 }
 
 variable "dns_servers" {
-  description = "List of DNS server addresses"
+  description = "List of DNS server addresses (optional)"
   type        = list(string)
+  default     = []
 
   validation {
-    condition     = length(var.dns_servers) > 0 && length(var.dns_servers) <= 3
-    error_message = "Must provide 1-3 DNS servers"
+    condition     = length(var.dns_servers) <= 3
+    error_message = "Must provide maximum 3 DNS servers"
   }
 }
 
@@ -213,8 +217,8 @@ variable "additional_disks" {
   default = []
 
   validation {
-    condition     = alltrue([for disk in var.additional_disks : disk.size_gb >= var.disk_min])
-    error_message = "All additional disks must be at least ${var.disk_min}GB"
+    condition     = alltrue([for disk in var.additional_disks : disk.size_gb >= 10])
+    error_message = "All additional disks must be at least 10GB"
   }
 }
 

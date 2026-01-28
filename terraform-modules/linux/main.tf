@@ -109,23 +109,24 @@ resource "vsphere_virtual_machine" "vm" {
     }
   }
 
-  # Clone from template
-  clone {
-    template_uuid = data.vsphere_virtual_machine.template.id
+  # Network customization (optional - only if static IP is configured)
+  dynamic "clone" {
+    for_each = var.ipv4_address != null ? [1] : []
+    content {
+      customize {
+        linux_options {
+          host_name = var.vm_hostname
+          domain    = var.domain
+        }
 
-    customize {
-      linux_options {
-        host_name = var.vm_hostname
-        domain    = var.domain
+        network_interface {
+          ipv4_address = var.ipv4_address
+          ipv4_netmask = var.ipv4_netmask
+        }
+
+        ipv4_gateway    = var.ipv4_gateway
+        dns_server_list = var.dns_servers
       }
-
-      network_interface {
-        ipv4_address = var.ipv4_address
-        ipv4_netmask = var.ipv4_netmask
-      }
-
-      ipv4_gateway    = var.ipv4_gateway
-      dns_server_list = var.dns_servers
     }
   }
 

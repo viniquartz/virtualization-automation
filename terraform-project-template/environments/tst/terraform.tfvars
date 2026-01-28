@@ -50,17 +50,20 @@ vsphere_folder = "TerraformTests" # Default: TerraformTests
 # vsphere_esx_host = "esxprd109.tapnet.tap.pt"
 
 # ==============================================================================
-# NETWORK CONFIGURATION
+# NETWORK CONFIGURATION (TODO: Configure later)
 # ==============================================================================
 
-network_domain       = "tapnet.tap.pt"
-network_ipv4_gateway = "10.x.x.1" # Set appropriate gateway
-network_ipv4_netmask = 24
-network_dns_servers  = ["10.x.x.10", "10.x.x.11"] # Set appropriate DNS
+# network_domain       = "tapnet.tap.pt"
+# network_ipv4_gateway = "10.x.x.1"
+# network_ipv4_netmask = 24
+# network_dns_servers  = ["10.x.x.10", "10.x.x.11"]
 
 # ==============================================================================
 # LINUX VM CONFIGURATION
 # 
+# Focus: CPU, Memory, Disk only
+# Network and IP configuration will be done later
+#
 # Examples:
 # - Single VM in CPD1:
 #   cpd=cpd1, linux_vm_count=1, start_sequence=1 → IACTST01
@@ -70,20 +73,22 @@ network_dns_servers  = ["10.x.x.10", "10.x.x.11"] # Set appropriate DNS
 # 
 # - Single VM replicated in both CPDs:
 #   cpd=both, linux_vm_count=1, start_sequence=1 → IACTST01 (CPD1) + IACTST02 (CPD2)
-# 
-# - Two VMs replicated in both CPDs (4 total):
-#   cpd=both, linux_vm_count=2, start_sequence=1 → IACTST01, IACTST03 (CPD1) + IACTST02, IACTST04 (CPD2)
 # ==============================================================================
 
 create_linux_vm         = true
 linux_vm_purpose        = "iac" # 3 chars: iac, web, app, db, srv
 linux_vm_count          = 1     # Number of VMs to create per CPD
 linux_vm_start_sequence = 1     # Starting sequence (1, 2, 3...)
-linux_cpu_count         = 1
-linux_memory_mb         = 2048
-linux_disk_size_gb      = 16
-linux_guest_id          = "rhel9_64Guest" # No template - create from scratch
-linux_ipv4_address      = "10.x.x.10"     # Set appropriate IP
+
+# RESOURCES - Configure here
+linux_cpu_count    = 1    # CPU cores (1-32)
+linux_memory_mb    = 2048 # RAM in MB (1024-131072)
+linux_disk_size_gb = 16   # Disk in GB (min 10GB)
+
+linux_guest_id = "rhel9_64Guest" # No template - create from scratch
+
+# Network (TODO: Configure later)
+# linux_ipv4_address = "10.x.x.10"
 
 # Additional Disks (Optional)
 # Example:
@@ -103,26 +108,31 @@ linux_ipv4_address      = "10.x.x.10"     # Set appropriate IP
 # ==============================================================================
 # WINDOWS VM CONFIGURATION
 # 
+# Focus: CPU, Memory, Disk only
+# Network and IP configuration will be done later
+#
 # Examples:
 # - Single VM in CPD2:
 #   cpd=cpd2, windows_vm_count=1, start_sequence=1 → SRVTST02
 # 
 # - Three VMs in CPD1:
 #   cpd=cpd1, windows_vm_count=3, start_sequence=1 → SRVTST01, SRVTST03, SRVTST05
-# 
-# - Single VM replicated in both CPDs:
-#   cpd=both, windows_vm_count=1, start_sequence=1 → SRVTST01 (CPD1) + SRVTST02 (CPD2)
 # ==============================================================================
 
 create_windows_vm         = false # Disabled for initial test
 windows_vm_purpose        = "srv" # 3 chars: srv, app, db, web
 windows_vm_count          = 1     # Number of VMs to create per CPD
 windows_vm_start_sequence = 1     # Starting sequence (1, 2, 3...)
-windows_cpu_count         = 4
-windows_memory_mb         = 8192
-windows_disk_size_gb      = 100
-windows_guest_id          = "windows2019srvNext_64Guest" # No template - create from scratch
-windows_ipv4_address      = "10.10.100.20"
-windows_workgroup         = "WORKGROUP"
-windows_admin_password    = "ChangeMe123!@#Test"
-windows_timezone          = 65
+
+# RESOURCES - Configure here
+windows_cpu_count    = 4    # CPU cores (1-32)
+windows_memory_mb    = 8192 # RAM in MB (2048-131072)
+windows_disk_size_gb = 100  # Disk in GB (min 40GB for Windows)
+
+windows_guest_id       = "windows2019srvNext_64Guest" # No template - create from scratch
+windows_workgroup      = "WORKGROUP"
+windows_admin_password = "ChangeMe123!@#Test"
+windows_timezone       = 65
+
+# Network (TODO: Configure later)
+# windows_ipv4_address = "10.x.x.20"
