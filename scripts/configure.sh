@@ -15,7 +15,7 @@
 # - vSphere credentials exported
 #
 # Usage: ./configure.sh <ticket-id> <environment> <git-repo-url>
-# Example: ./configure.sh OPS-1234 tst https://github.com/yourorg/virtualization-automation.git
+# Example: ./configure.sh OPS-1234 tst https://gitlab.tap.pt/digital-infrastructure/virtualizacao/terraform/virtualizacao-terraform-project-template.git
 #
 
 set -e
